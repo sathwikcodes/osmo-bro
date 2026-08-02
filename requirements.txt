@@ -1,0 +1,38 @@
+# Core FastAPI Dependencies
+fastapi>=0.109.0
+pydantic>=2.6.0
+pydantic[email]>=2.6.0
+pydantic-settings>=2.2.0
+uvicorn>=0.27.0
+python-multipart>=0.0.9
+python-dotenv==1.0.1
+
+# Database & Authentication
+supabase>=2.3.4
+sqlalchemy==2.0.30
+
+# AI/ML Dependencies
+openai>=1.12.0
+langchain==0.1.20
+langchain-openai>=0.0.7
+langchain-core==0.1.52
+pyautogen>=0.2.2
+autogen-agentchat>=0.2.2
+autogen-core==0.5.6
+autogen-ext==0.5.6
+
+# Monitoring & Error Tracking
+sentry-sdk>=1.40.0
+
+# Utilities
+aiohttp==3.9.5
+httpx==0.27.0
+python-dateutil==2.9.0.post0
+typing_extensions==4.13.2
+nanoid>=2.0.0
+deprecated>=1.2.13
+
+# Development Dependencies
+black==24.4.2
+pre-commit==3.7.0
+pylint==3.3.7

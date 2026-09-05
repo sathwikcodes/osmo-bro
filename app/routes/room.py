@@ -15,7 +15,12 @@ from lib.schema import (
 )
 from models import Room, Profile, Participant
 from core import HandleIncomingMessage, MediationFlow, RoomManager
-from app.common.dependencies import get_current_profile
+from app.common.dependencies import (
+    admin_only,
+    get_current_profile,
+    require_room_access,
+    require_room_creator,
+)
 
 
 router = APIRouter(
@@ -73,7 +78,9 @@ def analyze_image(image_url: str) -> str:
     description="Get a list of all rooms. Only accessible by admin users.",
     status_code=status.HTTP_200_OK,
 )
-async def get_all_rooms():
+async def get_all_rooms(
+    profile: Annotated[Profile, Depends(admin_only)],
+):
     """
     Get all rooms in the system.
 
@@ -109,19 +116,17 @@ async def get_my_rooms(profile: Annotated[Profile, Depends(get_current_profile)]
         400: {"description": "Not a parent room"},
     },
 )
-async def get_room(room_code: str):
+async def get_room(
+    room_code: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Get detailed information about a specific room.
 
     Parameters:
         room_code: The unique code of the room
     """
-    room = Room.fetch_by_room_code(room_code)
-    if not room:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Room not found with given room code.",
-        )
+    room = require_room_access(room_code, profile)
 
     if room.parent_room_code:
         raise HTTPException(
@@ -158,10 +163,18 @@ async def get_room(room_code: str):
     description="Create and initialize a new room with participants and observers.",
     status_code=status.HTTP_201_CREATED,
 )
-async def initialise_room(create_room: CreateRoom):
+async def initialise_room(
+    create_room: CreateRoom,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Initialize a new room with participants and observers. Initialise AI Bot conversation in background, separate from the human conversations.
     """
+    if create_room.creator_email != profile.email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="A room can only be created for the signed-in profile.",
+        )
     try:
         data = Room.create(create_room)
 
@@ -218,25 +231,29 @@ async def initialise_room(create_room: CreateRoom):
 
 
 @router.get("/{room_code}/conversations")
-async def get_room_conversations(room_code: str):
+async def get_room_conversations(
+    room_code: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Route to get room conversations.
     """
-    room = Room.fetch_by_room_code(room_code)
-    if not room:
-        raise HTTPException(
-            status_code=404, detail="Room not found with given room code."
-        )
+    room = require_room_access(room_code, profile)
 
     conversations = room.get_conversation()
     return [conversation.model_dump() for conversation in conversations.messages]
 
 
 @router.get("/{room_code}/participant/{email}")
-async def get_room_participant(room_code: str, email: str):
+async def get_room_participant(
+    room_code: str,
+    email: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Route to get room participant.
     """
+    require_room_access(room_code, profile)
     participant = Participant.fetch_by_room_code_and_email(
         room_code=room_code, email=email
     )
@@ -281,34 +298,42 @@ async def remove_room_participant(
 
 
 @router.get("/{room_code}/get_conflict_type")
-async def get_conflict_type(room_code: str):
+async def get_conflict_type(
+    room_code: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Route to fetch the conflict type of the Room.
     """
-    room = Room.fetch_by_room_code(room_code=room_code)
+    room = require_room_access(room_code, profile)
     room = room.get_parent_room() or room
     return {"conflict_type": room.mediator_type}
 
 
 @router.post("/{room_code}/change_conflict_type")
 async def change_conflict_type(
-    room_code: str, conflict_type: MediatorType = Body(..., embed=True)
+    room_code: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+    conflict_type: MediatorType = Body(..., embed=True),
 ):
     """
     Route to change the conflict type of the Room.
     """
-    room = Room.fetch_by_room_code(room_code=room_code)
+    room = require_room_creator(room_code, profile)
     room = room.get_parent_room() or room
     room.update_mediator_type(conflict_type)
     return {"room": room.room_code, "conflict_type": room.mediator_type}
 
 
 @router.get("/{room_code}/get_status")
-async def get_status(room_code: str):
+async def get_status(
+    room_code: str,
+    profile: Annotated[Profile, Depends(get_current_profile)],
+):
     """
     Route to fetch the status of the Room.
     """
-    room = Room.fetch_by_room_code(room_code=room_code)
+    room = require_room_access(room_code, profile)
     room = room.get_parent_room() or room
     return {"status": room.status}
 

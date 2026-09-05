@@ -3,6 +3,7 @@ import time
 from typing import Callable
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from app.common import config
 from app.common.sentry_config import SentryConfig
 from app.routes import ROUTES
 
@@ -17,10 +18,17 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # Configure CORS
+    cors_origins = [
+        origin.strip()
+        for origin in config.CORS_ORIGINS.split(",")
+        if origin.strip()
+    ]
+
+    # Restrict credentialed browser requests to explicitly configured frontends.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=cors_origins,
+        allow_origin_regex=config.CORS_ORIGIN_REGEX or None,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

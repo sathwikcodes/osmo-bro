@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from core import HandleIncomingMessage
 from lib.schema import CreateMessage
-from app.common.dependencies import get_current_profile
+from app.common.dependencies import get_current_profile, require_room_access
 from models.room import Profile, Room
 
 router = APIRouter(prefix="/message", tags=["message"])
@@ -17,12 +17,7 @@ async def send_message(
     Handle sending a new message.
     """
     try:
-        room = Room.fetch_by_room_code(create_message.room_code)
-        if not room:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Room not found with code: {create_message.room_code}",
-            )
+        room = require_room_access(create_message.room_code, profile)
 
         response = await HandleIncomingMessage.handle_new_message(
             profile=profile, room=room, create_message=create_message

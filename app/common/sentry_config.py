@@ -16,5 +16,5 @@ class SentryConfig:
                 integrations=[FastApiIntegration()],
                 environment=sentry_env,
                 sample_rate=0.2,
-                send_default_pii=True,
+                send_default_pii=False,
             )

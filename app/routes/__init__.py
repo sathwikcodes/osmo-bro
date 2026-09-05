@@ -22,4 +22,13 @@ async def check_health():
     return {"message": "API is super healthy"}
 
 
+@router.get(
+    "/healthz",
+    summary="Deployment health check",
+    include_in_schema=False,
+)
+async def deployment_health_check():
+    return {"status": "ok"}
+
+
 ROUTES = [router, message_router, profile_router, room_router]

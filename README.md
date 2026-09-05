@@ -1,6 +1,6 @@
-# Osmobro API
+# ResolveWithAI Backend API
 
-**The companion API for [ResolvewithAI](https://www.github.com/predlico/ResolvewithAI) - AI-mediated conflict resolution platform**
+FastAPI backend for [ResolveWithAI](https://resolvewith.ai/landing), an AI-mediated conflict-resolution platform. It manages private participant caucuses, multi-agent mediation, persistent conversation state, and bounded resolution workflows.
 
 🚧 Looking to run AI simulations of the conflict resolution process locally? Switch to the `local-testing-branch`.
 
@@ -18,7 +18,7 @@
 
 ## Overview
 
-Osmobro is a FastAPI-based web service that manages and facilitates AI-mediated conflict resolution between participants. The API handles room creation, participant management, message exchange, and orchestrates the mediation process between human participants and AI mediators.
+ResolveWithAI Backend is a FastAPI service that manages and facilitates AI-mediated conflict resolution between participants. The API handles room creation, participant management, message exchange, and orchestrates the mediation process between human participants and AI mediators.
 
 ### Key Features
 
@@ -32,22 +32,23 @@ Osmobro is a FastAPI-based web service that manages and facilitates AI-mediated 
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.11+
 - Supabase account
 - OpenAI API key
 
 ### Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and supply the required values:
 
 ```env
-SUPABASE_URL=https://your-supabase-config.co
-SUPABASE_KEY=sUpAbAs3-kEy
-OPENAI_API_KEY=sk-InsErT-yOuR-0p3nAI-KeY-hEre
-TESTING_MODE=False
-EXTRA_MODELS_KEY=sk--InsErT-yOuR-0p3nAI-KeY-hEre
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=
+OPENAI_API_KEY=
+TESTING_MODE=false
+EXTRA_MODELS_KEY=
 ENVIRONMENT=development
-AUTOGEN_USE_DOCKER=False
+CORS_ORIGINS=http://localhost:3000
+CORS_ORIGIN_REGEX=
 ```
 
 ## Installation & Setup
@@ -86,25 +87,30 @@ make run-dev
 
 > **Note**: Restart the service after making code changes to see updates.
 
-### Production Mode
+### Production Deployment
 
-Set your Docker context and deploy:
+The included Dockerfile runs the API on port `8000` and exposes `/healthz` for platform health probes. The current demo deployment uses Azure Container Apps. Configure all secrets through the platform rather than committing a `.env` file.
+
+To rebuild the image in Azure Container Registry and update the existing demo Container App:
 
 ```bash
-sh deploy.sh
+./deploy.sh <image-tag>
 ```
+
+The script uses the existing demo resource names by default. Override them with `AZURE_RESOURCE_GROUP`, `AZURE_REGISTRY_NAME`, `AZURE_CONTAINER_APP`, or `AZURE_IMAGE_NAME` when deploying to another environment.
 
 ### Important Configuration
 
 After starting the application:
 
-1. Copy the provided URL (e.g., `http://127.0.0.1:5000`)
+1. Copy the deployed HTTPS API URL
 2. Set it as `NEXT_PUBLIC_BACKEND_URL` in your ResolvewithAI frontend
-3. Restart the ResolvewithAI UI
+3. Add the frontend production URL to `CORS_ORIGINS` on the backend
+4. Redeploy the frontend so the public environment variable is embedded in the build
 
 ## Database Architecture
 
-Osmobro uses a PostgreSQL database hosted on [Supabase](https://www.supabase.com) with a structured schema designed for conflict resolution workflows.
+ResolveWithAI uses a PostgreSQL database hosted on [Supabase](https://www.supabase.com) with a structured schema designed for conflict resolution workflows.
 
 ### Database Schema Overview
 

@@ -12,4 +12,6 @@ services:
     environment:
       - ENVIRONMENT=development
       - PYTHONPATH=/app
+    env_file:
+      - .env
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload

@@ -33,9 +33,11 @@ class AIParticipantConfig(BaseConfig):
 
 
 class Config(BaseConfig):
-    ENVIRONMENT: str
+    ENVIRONMENT: str = "development"
     TESTING_MODE: bool = False
-    EXTRA_MODELS_KEY: str
+    EXTRA_MODELS_KEY: str = ""
+    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGIN_REGEX: str = ""
     SUPABASE: SupabaseConfig = SupabaseConfig()  # type: ignore
     SENTRY: SentryConfig = SentryConfig()
     OPENAI: OpenAIConfig = OpenAIConfig()  # type: ignore

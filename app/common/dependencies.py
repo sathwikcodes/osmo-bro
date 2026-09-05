@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from lib.supabase_client import supabase
 from models.profile import Profile
+from models.room import Participant, Room
 
 logger = logging.getLogger("Dependencies")
 security = HTTPBearer()
@@ -66,3 +67,32 @@ async def admin_only(profile: Annotated[Profile, Depends(get_current_profile)]):
             status_code=403, detail="Not allowed. Admin access required."
         )
     return profile
+
+
+def require_room_access(room_code: str, profile: Profile) -> Room:
+    """Return a room only when the signed-in profile may access its parent room."""
+    room = Room.fetch_by_room_code(room_code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found.")
+
+    parent_room = room.get_parent_room() or room
+    if parent_room.creator_email == profile.email:
+        return room
+
+    try:
+        Participant.fetch_for_room_email(parent_room, profile.email)
+    except Exception as exc:
+        raise HTTPException(status_code=403, detail="Room access denied.") from exc
+    return room
+
+
+def require_room_creator(room_code: str, profile: Profile) -> Room:
+    """Return a room only when the signed-in profile created its parent room."""
+    room = Room.fetch_by_room_code(room_code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found.")
+
+    parent_room = room.get_parent_room() or room
+    if parent_room.creator_email != profile.email:
+        raise HTTPException(status_code=403, detail="Room creator access required.")
+    return room
